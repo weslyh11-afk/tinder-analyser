@@ -53,6 +53,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[analyse] ANTHROPIC_API_KEY is not set");
+    return NextResponse.json(
+      { error: "API sleutel niet ingesteld. Voeg ANTHROPIC_API_KEY toe in Vercel." },
+      { status: 500 }
+    );
+  }
+
   try {
     const profileInput = { photos, bio, age, job, interests, height, education, relationshipGoal };
     const claudeResponse = await analyseProfile(profileInput);
@@ -60,9 +68,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error("[analyse] error:", err);
-    const message = err instanceof SyntaxError
-      ? "AI returned an unexpected response. Please try again."
-      : "Analysis failed. Please try again.";
+    let message = "Analyse mislukt. Probeer opnieuw.";
+    if (err instanceof SyntaxError) {
+      message = "AI gaf een onverwacht antwoord. Probeer opnieuw.";
+    } else if (err instanceof Error) {
+      if (err.message.includes("401") || err.message.includes("auth")) {
+        message = "Ongeldige API sleutel. Controleer ANTHROPIC_API_KEY in Vercel.";
+      } else if (err.message.includes("timeout") || err.message.includes("ETIMEDOUT")) {
+        message = "Analyse duurde te lang. Probeer met minder foto's.";
+      } else {
+        message = `Fout: ${err.message}`;
+      }
+    }
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
