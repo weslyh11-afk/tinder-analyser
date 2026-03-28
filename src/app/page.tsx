@@ -5,6 +5,7 @@ import { AnalysisResult, PhotoFile } from "@/types";
 import { saveSnapshot } from "@/components/results/IterationTracker";
 import PhotoUploadGrid from "@/components/upload/PhotoUploadGrid";
 import ProfileForm from "@/components/form/ProfileForm";
+import { compressForApi } from "@/lib/imageUtils";
 import ResultsPanel from "@/components/results/ResultsPanel";
 import Spinner from "@/components/ui/Spinner";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -58,11 +59,20 @@ export default function Home() {
     }
     dispatch({ type: "SUBMIT" });
     try {
+      // Compress photos to ~800px/0.7 quality before sending to avoid Vercel's 4.5MB body limit
+      const photosForApi = await Promise.all(
+        photos.map(async (p) => ({
+          ...p,
+          base64: await compressForApi(p.base64, p.mimeType),
+          mimeType: "image/jpeg" as const,
+        }))
+      );
+
       const res = await fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          photos,
+          photos: photosForApi,
           bio,
           age: age ?? undefined,
           job: job || undefined,

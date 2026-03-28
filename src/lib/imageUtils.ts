@@ -65,3 +65,35 @@ async function resizeAndEncode(file: File): Promise<string> {
 export function stripDataUri(base64: string): string {
   return base64.replace(/^data:[^;]+;base64,/, "");
 }
+
+// Compress a base64 image to max 800px / 0.7 quality for API calls
+// Keeps the display version untouched, reduces each photo to ~100-200KB
+export async function compressForApi(base64: string, mimeType: string): Promise<string> {
+  const API_MAX_DIM = 800;
+  const API_QUALITY = 0.7;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > API_MAX_DIM || height > API_MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * API_MAX_DIM) / width);
+          width = API_MAX_DIM;
+        } else {
+          width = Math.round((width * API_MAX_DIM) / height);
+          height = API_MAX_DIM;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      // Always output as JPEG for consistent compression
+      resolve(canvas.toDataURL("image/jpeg", API_QUALITY));
+    };
+    img.onerror = () => reject(new Error("Failed to compress image"));
+    img.src = base64;
+  });
+}
