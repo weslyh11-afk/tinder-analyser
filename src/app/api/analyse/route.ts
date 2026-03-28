@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyseProfile } from "@/lib/claude";
 import { computeAnalysisResult } from "@/lib/scoring";
+import { getMockAnalysisResult } from "@/lib/mockData";
 import { ProfileInput } from "@/types";
+
+const DEMO_MODE = process.env.DEMO_MODE === "true";
 
 export async function POST(req: NextRequest) {
   let body: ProfileInput;
@@ -35,6 +38,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    if (DEMO_MODE) {
+      await new Promise((r) => setTimeout(r, 1500)); // simulate delay
+      return NextResponse.json(getMockAnalysisResult(photos.map((p) => p.id)));
+    }
     const claudeResponse = await analyseProfile({ photos, bio, age, job, interests });
     const result = computeAnalysisResult(claudeResponse, { photos, bio, age, job, interests });
     return NextResponse.json(result);

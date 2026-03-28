@@ -44,7 +44,28 @@ export default function EnhancementSection({ result, photos }: Props) {
         body: JSON.stringify({ photoId, base64: photo.base64, mimeType: photo.mimeType }),
       });
       if (!startRes.ok) throw new Error("Failed to start enhancement");
-      const { predictionId } = await startRes.json();
+      const startData = await startRes.json();
+      const { predictionId } = startData;
+
+      // Demo mode: predictionId starts with "demo_", result is immediate
+      if (predictionId?.startsWith("demo_")) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const originalScore = photoScores.find((p) => p.photoId === photoId);
+        setStates((s) => ({
+          ...s,
+          [photoId]: {
+            status: "done",
+            data: {
+              photoId,
+              originalBase64: photo.base64,
+              enhancedUrl: photo.base64, // same image in demo
+              newPhotoScore: { ...originalScore!, subtotal: Math.min(12, (originalScore?.subtotal ?? 6) + 2) },
+              scoreDelta: 2,
+            },
+          },
+        }));
+        return;
+      }
 
       const originalScore = photoScores.find((p) => p.photoId === photoId);
       const originalSubtotal = originalScore?.subtotal ?? 0;
