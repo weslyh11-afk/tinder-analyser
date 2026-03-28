@@ -45,6 +45,7 @@ export function computeAnalysisResult(
     photoScores: claude.photos,
     bioScore: claude.bio,
     completenessScore,
+    vibe: claude.vibe,
     photosTotalPts,
     totalScore,
     worstPhotoIds,

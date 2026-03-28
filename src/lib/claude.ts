@@ -7,32 +7,43 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SYSTEM_PROMPT = `You are an expert dating profile analyst with deep knowledge of peer-reviewed research on attractiveness and online dating optimisation. You score photos and bios strictly according to a rubric grounded in real studies (SwipeStats 294M swipes, OkCupid 7,140 photo study, PubMed facial attractiveness research, UC Berkeley bio study). Return ONLY valid JSON — no markdown, no commentary.`;
 
 function buildScoringPrompt(input: ProfileInput): string {
-  return `Score each photo and the bio using the research-backed rubric below. Return a single JSON object — no extra keys, no prose.
+  return `Analyse this Tinder profile fully. Return a single JSON object — no extra keys, no prose.
 
 interface Response {
   photos: Array<{
     photoId: string;
-    // SCORING (integers only):
-    jawline: number;           // 0-4: Visibility and definition of jawline/chin. Research: chin alone explains 45% of facial attractiveness variance (orthodontic study, PubMed). 4=very defined & visible, 3=clear, 2=somewhat visible, 1=obscured or weak, 0=hidden (sunglasses/angle/shadow)
-    smileEyeContact: number;   // 0-4: Genuine smile + direct eye contact BOTH present. Research: smile accounts for 49% of attractiveness variance in smiling faces; eye contact + no smile is the WORST combo (Photofeeler 2017). 4=genuine smile+direct eye contact, 3=one of the two strong, 2=both moderate, 1=one present weakly, 0=neither
-    lightingSkin: number;      // 0-2: Even, flattering light and visible skin quality. Research: even skin tone is a primary health signal; iMotions neuro study found low-contrast photos trigger lower attraction. 2=excellent natural/window light + clear skin, 1=acceptable, 0=dark/harsh/overexposed
-    background: number;        // 0-1: Background quality. Research: cluttered backgrounds increase cognitive load, which decreases attraction (iMotions theta wave study). 1=clean/contextual/adds story, 0=cluttered/distracting/bathroom/bedroom mess
-    lifestyle: number;         // 0-1: Photo implies interesting activity, travel, sport, hobby, or environment. Research: outdoor/activity photos were the most common trait in the top-rated profiles (UOC Barcelona study of 1,000 Tinder profiles). 1=clear lifestyle context, 0=neutral/no context
-    subtotal: number;          // MUST equal exact sum of jawline+smileEyeContact+lightingSkin+background+lifestyle
-    // FEEDBACK — be very specific, reference the photo directly:
-    feedback: string[];        // Exactly 3 actionable tips. Be specific: "Your jaw is partially hidden by the camera angle — shoot from slightly below eye level to define your jawline" not "improve your jawline"
-    feedbackDetail: string[];  // Exactly 3 explanations of WHY each tip matters, citing the research. E.g. "Research shows chin/jawline definition explains 45% of attractiveness ratings — making it more visible can significantly boost your score."
-    enhanceable: boolean;      // true ONLY if lighting, background, or skin quality issues are visible that AI upscaling could realistically fix
+    jawline: number;           // 0-4: chin/jawline definition. Research: explains 45% of attractiveness variance (PubMed). 4=very defined, 0=hidden
+    smileEyeContact: number;   // 0-4: genuine smile + direct eye contact BOTH present. 4=both strong, 0=neither. Eye contact alone without smile is WORST combo (Photofeeler 2017)
+    lightingSkin: number;      // 0-2: even flattering light + skin clarity. Low-contrast photos lower attraction (iMotions neuro-study)
+    background: number;        // 0-1: uncluttered, contextual. Clutter raises cognitive load = lower attraction
+    lifestyle: number;         // 0-1: shows activity/hobby/environment. Top profiles have this consistently (UOC Barcelona 1,000 profile study)
+    subtotal: number;          // EXACT sum of above 5 fields
+    feedback: string[];        // EXACTLY 3 specific actionable tips referencing the actual photo
+    feedbackDetail: string[];  // EXACTLY 3 research-backed explanations for each tip (cite the study)
+    enhanceable: boolean;      // true only if AI upscaling could fix visible lighting/background/skin issues
   }>;
   bio: {
     text: string;
-    partnerInterest: number;   // 0-8: Shows genuine curiosity about the OTHER person. UC Berkeley research: only 20% of profiles do this, but it's the single strongest bio predictor of appeal. 8=strongly asks/invites the reader, 0=entirely self-focused
-    originality: number;       // 0-7: Absence of clichés. Common clichés to penalise: "love to laugh", "foodie", "gym rat", "adventure", "I love life", "looking for my partner in crime", "fluent in sarcasm", "dog lover". 7=completely original voice, 0=multiple clichés
-    adventurousness: number;   // 0-5: Openness to new experiences (travel, food, activities, meeting people). Research: adventurousness theme correlates with +67% match interest. 5=strong theme, 0=no mention
-    length: number;            // 0-5: Ideal = 150-300 chars. Short bios win by 73% (SwipeStats 7,079 profiles). Scoring: blank=0, <50=1, 50-149=3, 150-300=5, 301-500=3, >500=1
-    noNegativity: number;      // 0-5: No complaints, demands, deal-breakers, or defensive language ("no hookups", "if you can't handle me", "not here for games"). 5=fully positive, 0=multiple negative elements
-    subtotal: number;          // MUST equal exact sum
-    feedback: string[];        // Exactly 3 actionable tips, specific to the actual bio text
+    partnerInterest: number;   // 0-8: curiosity about the OTHER person (UC Berkeley: only 20% of profiles do this)
+    originality: number;       // 0-7: absence of clichés ("love to laugh", "foodie", "gym rat", "adventure seeker", "partner in crime")
+    adventurousness: number;   // 0-5: openness to new experiences (+67% match interest in studies)
+    length: number;            // 0-5: blank=0, <50=1, 50-149=3, 150-300=5, 301-500=3, >500=1
+    noNegativity: number;      // 0-5: no complaints/demands/deal-breakers
+    subtotal: number;          // EXACT sum
+    feedback: string[];        // EXACTLY 3 specific tips referencing the actual bio text
+  };
+  vibe: {
+    vibeLabel: string;         // 2-4 word label e.g. "Avontuurlijk & Warm" or "Serieus & Ambitieus"
+    vibeEmoji: string;         // single most fitting emoji
+    vibeScore: number;         // 0-10: how compelling/attractive is the overall vibe
+    vibeDescription: string;   // 2-3 sentences: what overall impression does this profile make on a potential match?
+    unintendedSignals: string[]; // EXACTLY 3 things this profile accidentally communicates that the person probably doesn't want to signal (be honest, e.g. "Je eerste foto suggereert onzekerheid over je uiterlijk doordat je weggekeken hebt")
+    conversationHooks: string[]; // EXACTLY 3 specific elements (from bio OR photos) that give a potential match something concrete to message about. Format: "📍 [element]: [why this is a great hook]"
+    firstImpression: {
+      verdict: "Stopper" | "Twijfelgeval" | "Passer"; // Stopper=would make someone stop scrolling, Twijfelgeval=unsure, Passer=would scroll past
+      score: number;           // 0-10 for the FIRST PHOTO ONLY as a standalone impression
+      reasoning: string;       // 1-2 sentences: what works/doesn't in the first 0.3 seconds
+    };
   };
 }
 
@@ -45,51 +56,39 @@ ${input.relationshipGoal ? `Looking for: ${input.relationshipGoal}` : ""}
 ${input.interests ? `Interests: ${input.interests}` : ""}
 
 STRICT RULES:
-- subtotal fields must be exact integer sums — never decimals.
-- feedback and feedbackDetail must each have EXACTLY 3 strings.
-- feedbackDetail must explain the WHY with a research reference for each tip.
-- If sunglasses are worn: jawline=0 (eyes hidden), smileEyeContact max 1. Note this explicitly in feedback.
-- If it is a group photo: note this is suboptimal (SwipeStats: solo photos get 36% more matches). Lifestyle=0 unless clear solo activity.
-- If no face is visible: jawline=0, smileEyeContact=0.
-- Bio empty: all bio fields=0, feedback=["Voeg een bio toe — profielen met bio krijgen 4× meer matches.", "Houd het onder de 300 tekens — korte bio's scoren 73% beter (SwipeStats data van 7.079 profielen).", "Toon interesse in de ander, niet alleen in jezelf (UC Berkeley onderzoek)."]
+- All subtotal fields = exact integer sums. No decimals.
+- feedback, feedbackDetail, unintendedSignals, conversationHooks must each have EXACTLY the specified number of strings.
+- unintendedSignals must be honest and specific — NOT generic. Reference actual elements.
+- conversationHooks must be concrete elements from THIS profile, not generic advice.
+- firstImpression evaluates ONLY the first photo as a standalone 0.3-second judgment.
+- vibeDescription must be written as if talking to the user directly ("Je profiel straalt...").
+- If sunglasses: jawline=0, smileEyeContact max 1. Flag in feedback.
+- If group photo as first: note in unintendedSignals.
+- Bio empty: all bio fields=0, feedback=["Voeg een bio toe — profielen met bio krijgen 4× meer matches.", "Houd het onder 300 tekens — korte bio's scoren 73% beter.", "Toon interesse in de ander, niet alleen in jezelf (UC Berkeley)."]
 - Return ONLY the JSON object.`;
 }
 
-export async function analyseProfile(
-  input: ProfileInput
-): Promise<ClaudeAnalysisResponse> {
+export async function analyseProfile(input: ProfileInput): Promise<ClaudeAnalysisResponse> {
   const content: Anthropic.MessageParam["content"] = [];
 
   for (const photo of input.photos) {
     content.push({
       type: "image",
-      source: {
-        type: "base64",
-        media_type: photo.mimeType,
-        data: stripDataUri(photo.base64),
-      },
+      source: { type: "base64", media_type: photo.mimeType, data: stripDataUri(photo.base64) },
     });
-    content.push({
-      type: "text",
-      text: `The photo above has id: "${photo.id}". Keep this id for your response.`,
-    });
+    content.push({ type: "text", text: `The photo above has id: "${photo.id}". Keep this id for your response.` });
   }
-
   content.push({ type: "text", text: buildScoringPrompt(input) });
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
-    max_tokens: 3000,
+    max_tokens: 4000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content }],
   });
 
   const raw = (response.content[0] as Anthropic.TextBlock).text.trim();
-  const cleaned = raw
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "");
-
+  const cleaned = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "");
   const parsed: ClaudeAnalysisResponse = JSON.parse(cleaned);
 
   for (const p of parsed.photos) {
@@ -97,47 +96,45 @@ export async function analyseProfile(
     if (!p.feedbackDetail) p.feedbackDetail = [];
   }
   parsed.bio.subtotal =
-    parsed.bio.partnerInterest +
-    parsed.bio.originality +
-    parsed.bio.adventurousness +
-    parsed.bio.length +
-    parsed.bio.noNegativity;
+    parsed.bio.partnerInterest + parsed.bio.originality +
+    parsed.bio.adventurousness + parsed.bio.length + parsed.bio.noNegativity;
+
+  if (!parsed.vibe) {
+    parsed.vibe = {
+      vibeLabel: "Onbekend",
+      vibeEmoji: "❓",
+      vibeScore: 5,
+      vibeDescription: "Kon geen vibe analyse uitvoeren.",
+      unintendedSignals: [],
+      conversationHooks: [],
+      firstImpression: { verdict: "Twijfelgeval", score: 5, reasoning: "" },
+    };
+  }
 
   return parsed;
 }
 
-export async function rescorePhoto(
-  photoId: string,
-  imageUrl: string
-): Promise<ClaudePhotoScore> {
+export async function rescorePhoto(photoId: string, imageUrl: string): Promise<ClaudePhotoScore> {
   const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 800,
     system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "image", source: { type: "url", url: imageUrl } },
-          {
-            type: "text",
-            text: `Score this photo (id: "${photoId}") and return ONLY JSON:
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "url", url: imageUrl } },
+        {
+          type: "text",
+          text: `Score this photo (id: "${photoId}") and return ONLY JSON:
 {
   photoId: string;
-  jawline: number;           // 0-4
-  smileEyeContact: number;   // 0-4
-  lightingSkin: number;      // 0-2
-  background: number;        // 0-1
-  lifestyle: number;         // 0-1
-  subtotal: number;
-  feedback: string[];        // 3 tips
-  feedbackDetail: string[];  // 3 research explanations
-  enhanceable: boolean;
+  jawline: number; smileEyeContact: number; lightingSkin: number;
+  background: number; lifestyle: number; subtotal: number;
+  feedback: string[]; feedbackDetail: string[]; enhanceable: boolean;
 }`,
-          },
-        ],
-      },
-    ],
+        },
+      ],
+    }],
   });
 
   const raw = (response.content[0] as Anthropic.TextBlock).text.trim();

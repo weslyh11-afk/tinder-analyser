@@ -4,15 +4,15 @@ export interface ProfileInput {
   bio: string;
   age?: number;
   job?: string;
-  interests?: string;       // comma-separated for Claude prompt
-  height?: number;          // cm
+  interests?: string;
+  height?: number;
   education?: string;
   relationshipGoal?: string;
 }
 
 export interface PhotoFile {
   id: string;
-  base64: string; // data:<mime>;base64,<data>
+  base64: string;
   mimeType: "image/jpeg" | "image/png" | "image/webp";
   originalName: string;
 }
@@ -20,31 +20,46 @@ export interface PhotoFile {
 // ---------- Claude raw response ----------
 export interface ClaudePhotoScore {
   photoId: string;
-  jawline: number;           // 0-4
-  smileEyeContact: number;   // 0-4
-  lightingSkin: number;      // 0-2
-  background: number;        // 0-1
-  lifestyle: number;         // 0-1
-  subtotal: number;          // 0-12
-  feedback: string[];        // 3 research-backed tips
-  feedbackDetail: string[];  // 3 explanations WHY each tip matters (research context)
+  jawline: number;
+  smileEyeContact: number;
+  lightingSkin: number;
+  background: number;
+  lifestyle: number;
+  subtotal: number;
+  feedback: string[];
+  feedbackDetail: string[];
   enhanceable: boolean;
 }
 
 export interface ClaudeBioScore {
   text: string;
-  partnerInterest: number;   // 0-8
-  originality: number;       // 0-7
-  adventurousness: number;   // 0-5
-  length: number;            // 0-5
-  noNegativity: number;      // 0-5
-  subtotal: number;          // 0-30
+  partnerInterest: number;
+  originality: number;
+  adventurousness: number;
+  length: number;
+  noNegativity: number;
+  subtotal: number;
   feedback: string[];
+}
+
+export interface VibeAnalysis {
+  vibeLabel: string;        // e.g. "Avontuurlijk & Warm"
+  vibeEmoji: string;        // single emoji representing the vibe
+  vibeScore: number;        // 0-10
+  vibeDescription: string;  // 2-3 zinnen over de algehele indruk
+  unintendedSignals: string[]; // 2-4 dingen die je onbedoeld communiceert
+  conversationHooks: string[]; // 2-4 concrete haakjes uit bio/foto's die gespreksstarters zijn
+  firstImpression: {
+    verdict: "Stopper" | "Twijfelgeval" | "Passer";
+    score: number;           // 0-10
+    reasoning: string;       // 1-2 zinnen waarom
+  };
 }
 
 export interface ClaudeAnalysisResponse {
   photos: ClaudePhotoScore[];
   bio: ClaudeBioScore;
+  vibe: VibeAnalysis;
 }
 
 // ---------- Computed scores ----------
@@ -59,6 +74,7 @@ export interface AnalysisResult {
   photoScores: ClaudePhotoScore[];
   bioScore: ClaudeBioScore;
   completenessScore: CompletenessScore;
+  vibe: VibeAnalysis;
   photosTotalPts: number;
   totalScore: number;
   worstPhotoIds: string[];
@@ -71,4 +87,13 @@ export interface EnhancementResult {
   enhancedUrl: string;
   newPhotoScore: ClaudePhotoScore;
   scoreDelta: number;
+}
+
+// ---------- Iteration tracker ----------
+export interface ScoreSnapshot {
+  date: string;       // ISO date string
+  totalScore: number;
+  photosTotalPts: number;
+  bioSubtotal: number;
+  photoCount: number;
 }

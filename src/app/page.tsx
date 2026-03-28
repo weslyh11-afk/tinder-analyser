@@ -2,6 +2,7 @@
 
 import { useReducer, useState } from "react";
 import { AnalysisResult, PhotoFile } from "@/types";
+import { saveSnapshot } from "@/components/results/IterationTracker";
 import PhotoUploadGrid from "@/components/upload/PhotoUploadGrid";
 import ProfileForm from "@/components/form/ProfileForm";
 import ResultsPanel from "@/components/results/ResultsPanel";
@@ -76,6 +77,14 @@ export default function Home() {
         dispatch({ type: "ERROR", message: data.error ?? "Analyse mislukt." });
         return;
       }
+      // Save to localStorage for iteration tracker
+      saveSnapshot({
+        date: new Date().toISOString(),
+        totalScore: data.totalScore,
+        photosTotalPts: data.photosTotalPts,
+        bioSubtotal: data.bioScore.subtotal,
+        photoCount: photos.length,
+      });
       dispatch({ type: "SUCCESS", result: data, photos });
     } catch {
       dispatch({ type: "ERROR", message: "Netwerkfout. Controleer je verbinding en probeer opnieuw." });
