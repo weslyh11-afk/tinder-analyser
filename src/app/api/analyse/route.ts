@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { photos, bio, age, job, interests } = body;
+  const { photos, bio, age, job, interests, height, education, relationshipGoal } = body;
 
   if (!photos || photos.length === 0) {
     return NextResponse.json(
@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
       await new Promise((r) => setTimeout(r, 1500)); // simulate delay
       return NextResponse.json(getMockAnalysisResult(photos.map((p) => p.id)));
     }
-    const claudeResponse = await analyseProfile({ photos, bio, age, job, interests });
-    const result = computeAnalysisResult(claudeResponse, { photos, bio, age, job, interests });
+    const profileInput = { photos, bio, age, job, interests, height, education, relationshipGoal };
+    const claudeResponse = await analyseProfile(profileInput);
+    const result = computeAnalysisResult(claudeResponse, profileInput);
     return NextResponse.json(result);
   } catch (err) {
     console.error("[analyse] error:", err);

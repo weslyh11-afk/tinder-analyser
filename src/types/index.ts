@@ -4,7 +4,10 @@ export interface ProfileInput {
   bio: string;
   age?: number;
   job?: string;
-  interests?: string;
+  interests?: string;       // comma-separated for Claude prompt
+  height?: number;          // cm
+  education?: string;
+  relationshipGoal?: string;
 }
 
 export interface PhotoFile {
@@ -17,13 +20,14 @@ export interface PhotoFile {
 // ---------- Claude raw response ----------
 export interface ClaudePhotoScore {
   photoId: string;
-  jawline: number;         // 0-4
-  smileEyeContact: number; // 0-4
-  lightingSkin: number;    // 0-2
-  background: number;      // 0-1
-  lifestyle: number;       // 0-1
-  subtotal: number;        // 0-12
-  feedback: string[];      // 3 actionable tips
+  jawline: number;           // 0-4
+  smileEyeContact: number;   // 0-4
+  lightingSkin: number;      // 0-2
+  background: number;        // 0-1
+  lifestyle: number;         // 0-1
+  subtotal: number;          // 0-12
+  feedback: string[];        // 3 research-backed tips
+  feedbackDetail: string[];  // 3 explanations WHY each tip matters (research context)
   enhanceable: boolean;
 }
 
@@ -55,8 +59,8 @@ export interface AnalysisResult {
   photoScores: ClaudePhotoScore[];
   bioScore: ClaudeBioScore;
   completenessScore: CompletenessScore;
-  photosTotalPts: number; // top-5 × subtotals, max 60
-  totalScore: number;     // 0-100
+  photosTotalPts: number;
+  totalScore: number;
   worstPhotoIds: string[];
 }
 
