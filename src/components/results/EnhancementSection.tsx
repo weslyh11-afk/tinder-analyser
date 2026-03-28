@@ -39,10 +39,27 @@ export default function EnhancementSection({ result, photos }: Props) {
     setStates((s) => ({ ...s, [photoId]: { status: "loading" } }));
 
     try {
-      // Demo mode: handle entirely client-side, no API call needed
-      if (IS_DEMO) {
+      // Real mode: send to Replicate via API (base64 in body)
+      // Demo mode: photoId via query param only — no body, no size limit issue
+      const enhanceUrl = IS_DEMO
+        ? `/api/enhance?photoId=${encodeURIComponent(photoId)}`
+        : "/api/enhance";
+
+      const startRes = await fetch(enhanceUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: IS_DEMO ? undefined : JSON.stringify({ photoId, base64: photo.base64, mimeType: photo.mimeType }),
+      });
+      if (!startRes.ok) {
+        const err = await startRes.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to start enhancement");
+      }
+      const { predictionId } = await startRes.json();
+      const originalScore = photoScores.find((p) => p.photoId === photoId);
+
+      // Demo mode: resolve client-side, no polling needed
+      if (predictionId?.startsWith("demo_")) {
         await new Promise((r) => setTimeout(r, 2500));
-        const originalScore = photoScores.find((p) => p.photoId === photoId);
         setStates((s) => ({
           ...s,
           [photoId]: {
@@ -64,19 +81,6 @@ export default function EnhancementSection({ result, photos }: Props) {
         return;
       }
 
-      // Real mode: send to Replicate via API
-      const startRes = await fetch("/api/enhance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoId, base64: photo.base64, mimeType: photo.mimeType }),
-      });
-      if (!startRes.ok) {
-        const err = await startRes.json().catch(() => ({}));
-        throw new Error(err.error ?? "Failed to start enhancement");
-      }
-      const { predictionId } = await startRes.json();
-
-      const originalScore = photoScores.find((p) => p.photoId === photoId);
       const originalSubtotal = originalScore?.subtotal ?? 0;
 
       for (let attempt = 0; attempt < 30; attempt++) {
