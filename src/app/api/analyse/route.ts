@@ -4,9 +4,25 @@ import { computeAnalysisResult } from "@/lib/scoring";
 import { getMockAnalysisResult } from "@/lib/mockData";
 import { ProfileInput } from "@/types";
 
+// Extend Vercel function timeout to 60s — Claude with 6 photos needs 15-30s
+export const maxDuration = 60;
+
 const DEMO_MODE = process.env.DEMO_MODE === "true";
 
 export async function POST(req: NextRequest) {
+  // In demo mode, skip body parsing entirely to avoid size limits
+  if (DEMO_MODE) {
+    let photoIds: string[] = [];
+    try {
+      const body = await req.json();
+      photoIds = (body.photos ?? []).map((p: { id: string }) => p.id);
+    } catch {
+      // ignore — demo doesn't need the body
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+    return NextResponse.json(getMockAnalysisResult(photoIds));
+  }
+
   let body: ProfileInput;
   try {
     body = await req.json();
@@ -38,10 +54,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (DEMO_MODE) {
-      await new Promise((r) => setTimeout(r, 1500)); // simulate delay
-      return NextResponse.json(getMockAnalysisResult(photos.map((p) => p.id)));
-    }
     const profileInput = { photos, bio, age, job, interests, height, education, relationshipGoal };
     const claudeResponse = await analyseProfile(profileInput);
     const result = computeAnalysisResult(claudeResponse, profileInput);
