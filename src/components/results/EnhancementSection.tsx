@@ -17,6 +17,8 @@ type EnhanceState =
   | { status: "done"; data: EnhancementResult }
   | { status: "error"; message: string };
 
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 export default function EnhancementSection({ result, photos }: Props) {
   const { worstPhotoIds, photoScores } = result;
   const [states, setStates] = useState<Record<string, EnhanceState>>(
@@ -26,7 +28,7 @@ export default function EnhancementSection({ result, photos }: Props) {
   if (worstPhotoIds.length === 0) {
     return (
       <div className="bg-gray-800 rounded-2xl p-5 text-center text-gray-400 text-sm">
-        Your photos are already well-optimised for AI enhancement.
+        Je foto&apos;s zijn al goed geoptimaliseerd voor AI-verbetering.
       </div>
     );
   }
@@ -34,22 +36,12 @@ export default function EnhancementSection({ result, photos }: Props) {
   async function enhance(photoId: string) {
     const photo = photos.find((p) => p.id === photoId);
     if (!photo) return;
-
     setStates((s) => ({ ...s, [photoId]: { status: "loading" } }));
 
     try {
-      const startRes = await fetch("/api/enhance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoId, base64: photo.base64, mimeType: photo.mimeType }),
-      });
-      if (!startRes.ok) throw new Error("Failed to start enhancement");
-      const startData = await startRes.json();
-      const { predictionId } = startData;
-
-      // Demo mode: predictionId starts with "demo_", result is immediate
-      if (predictionId?.startsWith("demo_")) {
-        await new Promise((r) => setTimeout(r, 2000));
+      // Demo mode: handle entirely client-side, no API call needed
+      if (IS_DEMO) {
+        await new Promise((r) => setTimeout(r, 2500));
         const originalScore = photoScores.find((p) => p.photoId === photoId);
         setStates((s) => ({
           ...s,
@@ -58,8 +50,13 @@ export default function EnhancementSection({ result, photos }: Props) {
             data: {
               photoId,
               originalBase64: photo.base64,
-              enhancedUrl: photo.base64, // same image in demo
-              newPhotoScore: { ...originalScore!, subtotal: Math.min(12, (originalScore?.subtotal ?? 6) + 2) },
+              enhancedUrl: photo.base64,
+              newPhotoScore: {
+                ...originalScore!,
+                subtotal: Math.min(12, (originalScore?.subtotal ?? 6) + 2),
+                lightingSkin: Math.min(2, (originalScore?.lightingSkin ?? 1) + 1),
+                background: Math.min(1, (originalScore?.background ?? 0) + 1),
+              },
               scoreDelta: 2,
             },
           },
@@ -67,26 +64,34 @@ export default function EnhancementSection({ result, photos }: Props) {
         return;
       }
 
+      // Real mode: send to Replicate via API
+      const startRes = await fetch("/api/enhance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId, base64: photo.base64, mimeType: photo.mimeType }),
+      });
+      if (!startRes.ok) {
+        const err = await startRes.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to start enhancement");
+      }
+      const { predictionId } = await startRes.json();
+
       const originalScore = photoScores.find((p) => p.photoId === photoId);
       const originalSubtotal = originalScore?.subtotal ?? 0;
 
-      // Poll every 3s
       for (let attempt = 0; attempt < 30; attempt++) {
         await new Promise((r) => setTimeout(r, 3000));
         const statusRes = await fetch(
           `/api/enhance-status?predictionId=${predictionId}&photoId=${photoId}&originalSubtotal=${originalSubtotal}`
         );
         const data = await statusRes.json();
-
         if (data.status === "succeeded") {
           setStates((s) => ({ ...s, [photoId]: { status: "done", data: data.result } }));
           return;
         }
-        if (data.status === "failed") {
-          throw new Error(data.error ?? "Enhancement failed");
-        }
+        if (data.status === "failed") throw new Error(data.error ?? "Enhancement failed");
       }
-      throw new Error("Enhancement timed out. Please try again.");
+      throw new Error("Enhancement timed out. Probeer opnieuw.");
     } catch (err) {
       setStates((s) => ({
         ...s,
@@ -98,15 +103,12 @@ export default function EnhancementSection({ result, photos }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <h3 className="text-white font-semibold">AI Photo Enhancement</h3>
-        <span className="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full">
-          Beta
-        </span>
+        <h3 className="text-white font-semibold">AI Foto Verbetering</h3>
+        <span className="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full">Beta</span>
       </div>
       <p className="text-sm text-gray-400">
-        These photos scored lowest and are candidates for AI improvement. The
-        enhancer improves lighting, sharpness, and skin quality without changing
-        your face.
+        Deze foto&apos;s scoorden het laagst en komen in aanmerking voor AI-verbetering.
+        De AI verbetert belichting, scherpte en huidkwaliteit zonder je gezicht te veranderen.
       </p>
 
       {worstPhotoIds.map((photoId) => {
@@ -117,11 +119,9 @@ export default function EnhancementSection({ result, photos }: Props) {
         return (
           <div key={photoId} className="bg-gray-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-white text-sm font-medium">
-                Photo {photoIndex + 1}
-              </span>
+              <span className="text-white text-sm font-medium">Foto {photoIndex + 1}</span>
               {state.status === "done" && (
-                <span className="text-green-400 text-sm font-semibold">
+                <span className="text-green-400 text-sm font-semibold flex items-center gap-1">
                   +{state.data.scoreDelta} pts
                   <Badge score={state.data.newPhotoScore.subtotal} max={12} size="sm" />
                 </span>
@@ -129,22 +129,18 @@ export default function EnhancementSection({ result, photos }: Props) {
             </div>
 
             {state.status === "idle" && (
-              <div className="flex gap-3 items-start">
+              <div className="flex gap-3 items-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.base64}
-                  alt="Original"
-                  className="w-24 h-24 rounded-xl object-cover"
-                />
-                <div className="flex-1">
+                <img src={photo.base64} alt="Origineel" className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                <div>
                   <button
                     onClick={() => enhance(photoId)}
                     className="bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
                   >
-                    Enhance this photo
+                    Verbeter deze foto
                   </button>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Takes ~30–60 seconds
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    {IS_DEMO ? "Demo — ~3 seconden" : "Duurt ~30–60 seconden"}
                   </p>
                 </div>
               </div>
@@ -153,18 +149,18 @@ export default function EnhancementSection({ result, photos }: Props) {
             {state.status === "loading" && (
               <div className="flex items-center gap-3 text-gray-400 text-sm py-4">
                 <Spinner />
-                <span>Enhancing photo... this takes about 30–60 seconds</span>
+                <span>
+                  {IS_DEMO ? "Foto wordt verwerkt..." : "Foto wordt verbeterd... dit duurt ~30–60 seconden"}
+                </span>
               </div>
             )}
 
             {state.status === "done" && (
               <div className="space-y-2">
-                <BeforeAfterSlider
-                  beforeSrc={photo.base64}
-                  afterSrc={state.data.enhancedUrl}
-                />
+                <BeforeAfterSlider beforeSrc={photo.base64} afterSrc={state.data.enhancedUrl} />
                 <p className="text-xs text-gray-500 text-center">
-                  Drag the handle to compare before and after
+                  Sleep de handle om voor en na te vergelijken
+                  {IS_DEMO && <span className="text-amber-500/70"> (demo: zelfde foto)</span>}
                 </p>
                 {state.data.newPhotoScore.feedback.map((tip, i) => (
                   <p key={i} className="text-sm text-gray-300 flex gap-2">
@@ -176,13 +172,13 @@ export default function EnhancementSection({ result, photos }: Props) {
             )}
 
             {state.status === "error" && (
-              <div className="text-red-400 text-sm">
-                {state.message}
+              <div className="text-red-400 text-sm flex items-center gap-2">
+                <span>{state.message}</span>
                 <button
                   onClick={() => setStates((s) => ({ ...s, [photoId]: { status: "idle" } }))}
-                  className="ml-2 underline"
+                  className="underline hover:text-red-300"
                 >
-                  Retry
+                  Opnieuw
                 </button>
               </div>
             )}
