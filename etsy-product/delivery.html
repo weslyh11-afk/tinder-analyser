@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPL Gym Planner — Notion Template</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f0f0f;
+      color: #ffffff;
+    }
+
+    /* ── PAGE BREAKS ── */
+    .page {
+      width: 794px;
+      min-height: 1123px;
+      margin: 0 auto 40px;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    /* ── PAGE 1: COVER ── */
+    .cover {
+      background: linear-gradient(145deg, #111111 0%, #1a1a2e 50%, #16213e 100%);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .cover::before {
+      content: '';
+      position: absolute;
+      top: -100px; right: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(239,68,68,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .cover::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: -80px;
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .cover-inner { position: relative; z-index: 1; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #a0a0b0;
+      margin-bottom: 30px;
+    }
+
+    .cover h1 {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #c0c0d0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .cover h1 span { color: #ef4444; -webkit-text-fill-color: #ef4444; }
+
+    .cover .sub {
+      font-size: 18px;
+      color: #606070;
+      margin-bottom: 50px;
+      font-weight: 300;
+    }
+
+    .tags {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+    }
+
+    .tag {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tag.red   { background: rgba(239,68,68,0.15);  color: #ef4444;  border: 1px solid rgba(239,68,68,0.3);  }
+    .tag.blue  { background: rgba(59,130,246,0.15); color: #60a5fa;  border: 1px solid rgba(59,130,246,0.3); }
+    .tag.green { background: rgba(34,197,94,0.15);  color: #4ade80;  border: 1px solid rgba(34,197,94,0.3);  }
+    .tag.gray  { background: rgba(255,255,255,0.05);color: #808090;  border: 1px solid rgba(255,255,255,0.1);}
+
+    .thank-you {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 28px 36px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .thank-you p {
+      font-size: 15px;
+      color: #9090a0;
+      line-height: 1.7;
+    }
+
+    .thank-you strong { color: #ffffff; }
+
+    /* ── PAGE 2: LINK ── */
+    .link-page {
+      background: #111111;
+      justify-content: center;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #404050;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+
+    .section-desc {
+      font-size: 15px;
+      color: #606070;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .link-box {
+      background: rgba(255,255,255,0.04);
+      border: 2px solid rgba(59,130,246,0.4);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    .link-box .link-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #60a5fa;
+      margin-bottom: 12px;
+    }
+
+    .link-box a {
+      font-size: 16px;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      word-break: break-all;
+      display: block;
+      margin-bottom: 16px;
+      padding: 14px 20px;
+      background: rgba(59,130,246,0.1);
+      border-radius: 10px;
+      border: 1px solid rgba(59,130,246,0.2);
+    }
+
+    .link-box .note {
+      font-size: 13px;
+      color: #505060;
+    }
+
+    .steps-mini {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .step-mini {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .step-mini .num {
+      font-size: 28px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.1);
+      margin-bottom: 8px;
+    }
+
+    .step-mini p {
+      font-size: 13px;
+      color: #707080;
+      line-height: 1.5;
+    }
+
+    .step-mini strong { color: #c0c0d0; }
+
+    /* ── PAGE 3: HOW TO USE ── */
+    .howto-page {
+      background: #0d0d1a;
+    }
+
+    .workout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .workout-card {
+      border-radius: 14px;
+      padding: 22px;
+    }
+
+    .workout-card.push { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2);  }
+    .workout-card.pull { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); }
+    .workout-card.legs { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.2);  }
+
+    .workout-card .wc-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .workout-card.push .wc-title { color: #ef4444; }
+    .workout-card.pull .wc-title { color: #60a5fa; }
+    .workout-card.legs .wc-title { color: #4ade80; }
+
+    .workout-card .wc-sub {
+      font-size: 11px;
+      color: #505060;
+      margin-bottom: 12px;
+    }
+
+    .workout-card ul {
+      list-style: none;
+      font-size: 12px;
+      color: #808090;
+      line-height: 1.8;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .feature {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .feature .icon {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .feature h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #e0e0f0;
+      margin-bottom: 4px;
+    }
+
+    .feature p {
+      font-size: 12px;
+      color: #606070;
+      line-height: 1.5;
+    }
+
+    /* ── PAGE 4: TERMS ── */
+    .terms-page {
+      background: #111111;
+      justify-content: center;
+    }
+
+    .terms-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 30px;
+    }
+
+    .terms-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: flex-start;
+    }
+
+    .terms-item:last-child { margin-bottom: 0; }
+
+    .terms-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .terms-item h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #e0e0f0;
+      margin-bottom: 4px;
+    }
+
+    .terms-item p {
+      font-size: 13px;
+      color: #606070;
+      line-height: 1.6;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 13px;
+      color: #404050;
+      line-height: 1.8;
+    }
+
+    .footer-note strong { color: #606070; }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: #0f0f0f; }
+      .page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     PAGE 1 — COVER
+══════════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-inner">
+    <div class="badge">✦ Digital Download · Notion Template</div>
+    <h1>PPL <span>GYM</span><br>PLANNER</h1>
+    <p class="sub">Push · Pull · Legs — Track every rep. Hit every PR.</p>
+
+    <div class="tags">
+      <span class="tag red">🔴 Push Day</span>
+      <span class="tag blue">🔵 Pull Day</span>
+      <span class="tag green">🟢 Legs Day</span>
+      <span class="tag gray">🏆 PR Wall</span>
+      <span class="tag gray">🎯 Goals</span>
+      <span class="tag gray">⚡ XP System</span>
+      <span class="tag gray">📊 Dashboard</span>
+    </div>
+
+    <div class="thank-you">
+      <p>
+        <strong>Thank you for your purchase! 🙌</strong><br><br>
+        Inside this document you'll find your personal template link,
+        step-by-step setup instructions, and everything you need
+        to start tracking your workouts today.
+      </p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 — YOUR TEMPLATE LINK
+══════════════════════════════════════════ -->
+<div class="page link-page">
+  <div class="section-label">Step 1</div>
+  <div class="section-title">Access Your Template</div>
+  <p class="section-desc">
+    Click the link below to open your Notion template.
+    You'll need a free Notion account — sign up at notion.com if you don't have one yet.
+  </p>
+
+  <div class="link-box">
+    <div class="link-label">🔗 Your Template Link</div>
+    <a href="PASTE_YOUR_NOTION_LINK_HERE">PASTE_YOUR_NOTION_LINK_HERE</a>
+    <p class="note">⚠️ Please do not share this link publicly. This link is for personal use only.</p>
+  </div>
+
+  <div class="steps-mini">
+    <div class="step-mini">
+      <div class="num">01</div>
+      <p>Click the link above to open the template in Notion</p>
+    </div>
+    <div class="step-mini">
+      <div class="num">02</div>
+      <p>Click <strong>"Duplicate"</strong> in the top-right corner</p>
+    </div>
+    <div class="step-mini">
+      <div class="num">03</div>
+      <p>The template is now in <strong>your workspace</strong> — ready to use!</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 3 — HOW TO USE
+══════════════════════════════════════════ -->
+<div class="page howto-page">
+  <div class="section-label">Step 2</div>
+  <div class="section-title">How to Use It</div>
+  <p class="section-desc">
+    Your planner has 3 workout pages + 4 extra pages. Here's a quick overview.
+  </p>
+
+  <div class="workout-grid">
+    <div class="workout-card push">
+      <div class="wc-title">🔴 Push Day</div>
+      <div class="wc-sub">Chest · Shoulders · Triceps</div>
+      <ul>
+        <li>Flat Barbell Bench Press</li>
+        <li>Incline Dumbbell Press</li>
+        <li>Cable Chest Fly</li>
+        <li>Dumbbell Shoulder Press</li>
+        <li>Cable Lateral Raise</li>
+        <li>Tricep Pushdown</li>
+        <li>Overhead Tricep Ext.</li>
+      </ul>
+    </div>
+    <div class="workout-card pull">
+      <div class="wc-title">🔵 Pull Day</div>
+      <div class="wc-sub">Back · Biceps · Rear Delts</div>
+      <ul>
+        <li>Lat Pulldown</li>
+        <li>Barbell Row</li>
+        <li>Seated Cable Row</li>
+        <li>Face Pull</li>
+        <li>EZ-Bar Curl</li>
+        <li>Incline Dumbbell Curl</li>
+        <li>Hammer Curl</li>
+      </ul>
+    </div>
+    <div class="workout-card legs">
+      <div class="wc-title">🟢 Legs Day</div>
+      <div class="wc-sub">Quads · Hamstrings · Glutes</div>
+      <ul>
+        <li>Barbell Back Squat</li>
+        <li>Romanian Deadlift</li>
+        <li>Leg Press</li>
+        <li>Hip Thrust</li>
+        <li>Bulgarian Split Squat</li>
+        <li>Leg Curl Machine</li>
+        <li>Leg Extension + Calves</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature">
+      <div class="icon">⚡</div>
+      <div>
+        <h4>XP System</h4>
+        <p>Every exercise you check ✅ = +100 XP. Level up from Rookie to GOD MODE.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="icon">🏆</div>
+      <div>
+        <h4>PR Wall</h4>
+        <p>Track your personal records for all 22 exercises. See PRs grouped by muscle.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="icon">🎯</div>
+      <div>
+        <h4>Goals Page</h4>
+        <p>Set strength and body goals with a target date. Track your status as you progress.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="icon">📊</div>
+      <div>
+        <h4>Dashboard</h4>
+        <p>Log your body weight and workouts each week. Watch your progress chart grow.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 4 — TERMS & SUPPORT
+══════════════════════════════════════════ -->
+<div class="page terms-page">
+  <div class="section-label">Important</div>
+  <div class="section-title">Terms of Use</div>
+  <p class="section-desc">
+    By purchasing this template you agree to the following terms.
+    Please read them before sharing or using this product.
+  </p>
+
+  <div class="terms-box">
+    <div class="terms-item">
+      <div class="terms-icon">✅</div>
+      <div>
+        <h4>Personal use</h4>
+        <p>You may use this template for your own personal fitness tracking. You may duplicate it to your own Notion workspace and customize it freely.</p>
+      </div>
+    </div>
+    <div class="terms-item">
+      <div class="terms-icon">✅</div>
+      <div>
+        <h4>Customization</h4>
+        <p>You are welcome to modify the template to suit your personal needs — add exercises, change colors, rename pages, etc.</p>
+      </div>
+    </div>
+    <div class="terms-item">
+      <div class="terms-icon">❌</div>
+      <div>
+        <h4>No redistribution</h4>
+        <p>You may not share, resell, or redistribute the template link or the PDF publicly. This purchase is for a single user only.</p>
+      </div>
+    </div>
+    <div class="terms-item">
+      <div class="terms-icon">❌</div>
+      <div>
+        <h4>No resale</h4>
+        <p>You may not resell or re-publish this template (or a modified version of it) on Etsy, Gumroad, or any other platform.</p>
+      </div>
+    </div>
+    <div class="terms-item">
+      <div class="terms-icon">↩️</div>
+      <div>
+        <h4>Refunds</h4>
+        <p>Due to the digital nature of this product, refunds are not available once the template link has been accessed.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <strong>Questions?</strong> Contact me via Etsy messages and I'll get back to you within 24 hours.<br>
+    Thank you again for your purchase — now go hit a new PR! 💪
+  </div>
+</div>
+
+</body>
+</html>
