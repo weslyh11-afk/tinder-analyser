@@ -117,10 +117,11 @@ function ScoreGauge({ score, size = 160, strokeWidth = 10, label }) {
   );
 }
 
-// ── Category Card ────────────────────────────────────────────────────────────
+// ── Category Card (expanded with science + ideal + how to improve) ───────────
 
-function CategoryCard({ name, score, label, details }) {
+function CategoryCard({ name, score, label, details, science, ideal, howToImprove }) {
   const [barWidth, setBarWidth] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setBarWidth((score / 10) * 100), 150);
@@ -148,6 +149,41 @@ function CategoryCard({ name, score, label, details }) {
       </div>
       <span className="text-xs font-medium text-amber-500">{label}</span>
       <p className="text-xs text-zinc-400 leading-relaxed">{details}</p>
+
+      {(science || ideal || howToImprove) && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1 text-[11px] text-amber-500/70 hover:text-amber-500 transition-colors text-left flex items-center gap-1"
+        >
+          <span className="transform transition-transform" style={{ display: "inline-block", transform: expanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+            ▶
+          </span>
+          {expanded ? "Hide details" : "Science & how to improve"}
+        </button>
+      )}
+
+      {expanded && (
+        <div className="mt-1 space-y-2 border-t border-zinc-800 pt-2">
+          {science && (
+            <div>
+              <p className="text-[10px] font-medium text-blue-400 uppercase tracking-wider mb-0.5">Measurement</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">{science}</p>
+            </div>
+          )}
+          {ideal && (
+            <div>
+              <p className="text-[10px] font-medium text-green-400 uppercase tracking-wider mb-0.5">What a 10/10 looks like</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">{ideal}</p>
+            </div>
+          )}
+          {howToImprove && (
+            <div>
+              <p className="text-[10px] font-medium text-amber-400 uppercase tracking-wider mb-0.5">How to improve</p>
+              <p className="text-[11px] text-zinc-300 leading-relaxed">{howToImprove}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -487,7 +523,7 @@ export default function FaceAnalysisPage() {
           <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
             Detailed Breakdown
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
             {categoryKeys.map((key) => (
               <CategoryCard
                 key={key}
@@ -495,6 +531,9 @@ export default function FaceAnalysisPage() {
                 score={cats[key].score}
                 label={cats[key].label}
                 details={cats[key].details}
+                science={cats[key].science}
+                ideal={cats[key].ideal}
+                howToImprove={cats[key].how_to_improve}
               />
             ))}
           </div>
@@ -528,29 +567,64 @@ export default function FaceAnalysisPage() {
             </div>
           )}
 
-          {/* Improvement Areas */}
+          {/* Improvement Areas (enhanced with current→target, priority, timeframe) */}
           {results.improvement_areas && results.improvement_areas.length > 0 && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
-              <h3 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-3">
-                Areas to Improve
+              <h3 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-4">
+                Your Glow-Up Plan
               </h3>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {results.improvement_areas.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="text-amber-500 text-lg leading-none mt-0.5">
-                      💡
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-zinc-200">
+                  <li key={i} className="border-l-2 border-amber-500/30 pl-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-zinc-200">
                         {item.area}
                       </p>
-                      <p className="text-xs text-zinc-400 mt-0.5">
-                        {item.suggestion}
-                      </p>
+                      {item.priority && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          item.priority === "high" ? "bg-red-500/20 text-red-400" :
+                          item.priority === "medium" ? "bg-amber-500/20 text-amber-400" :
+                          "bg-zinc-700 text-zinc-400"
+                        }`}>
+                          {item.priority}
+                        </span>
+                      )}
                     </div>
+                    {item.current && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-red-400 font-medium uppercase">Now:</span>
+                        <span className="text-[11px] text-zinc-400">{item.current}</span>
+                      </div>
+                    )}
+                    {item.target && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-green-400 font-medium uppercase">Goal:</span>
+                        <span className="text-[11px] text-zinc-400">{item.target}</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-zinc-300 mt-1.5 leading-relaxed">
+                      {item.suggestion}
+                    </p>
+                    {item.timeframe && (
+                      <p className="text-[11px] text-zinc-500 mt-1">
+                        ⏱ {item.timeframe}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* What a 10/10 looks like */}
+          {results.what_a_10_looks_like && (
+            <div className="bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 rounded-xl p-5 mb-6">
+              <h3 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-2">
+                What Would Make You a 10/10
+              </h3>
+              <p className="text-sm text-zinc-200 leading-relaxed">
+                {results.what_a_10_looks_like}
+              </p>
             </div>
           )}
 
