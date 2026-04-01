@@ -241,15 +241,14 @@ export default function FaceAnalysisPage() {
         </p>
 
         {/* Upload zone */}
-        <div
-          className={`mt-10 w-full max-w-md aspect-[4/3] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
+        <label
+          className={`mt-10 w-full max-w-md aspect-[4/3] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden ${
             dragOver
               ? "border-amber-500 bg-amber-500/10"
               : imagePreview
               ? "border-zinc-700 bg-zinc-900"
               : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-500"
           }`}
-          onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -257,16 +256,26 @@ export default function FaceAnalysisPage() {
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            onChange={(e) => {
+              handleFile(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
           {imagePreview ? (
             <img
               src={imagePreview}
               alt="Preview"
-              className="w-full h-full object-cover rounded-2xl"
+              className="w-full h-full object-cover rounded-2xl pointer-events-none"
             />
           ) : (
             <>
               <svg
-                className="w-12 h-12 text-zinc-500 mb-3"
+                className="w-12 h-12 text-zinc-500 mb-3 pointer-events-none"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -278,20 +287,13 @@ export default function FaceAnalysisPage() {
                   d="M12 16v-8m0 0l-3 3m3-3l3 3M6.75 20.25h10.5A2.25 2.25 0 0019.5 18V6a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6v12a2.25 2.25 0 002.25 2.25z"
                 />
               </svg>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-zinc-400 pointer-events-none">
                 Drag & drop or <span className="text-amber-500 font-medium">click to upload</span>
               </p>
-              <p className="text-xs text-zinc-600 mt-1">JPG, PNG, or WebP</p>
+              <p className="text-xs text-zinc-600 mt-1 pointer-events-none">JPG, PNG, or WebP</p>
             </>
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files?.[0])}
-          />
-        </div>
+        </label>
 
         {imagePreview && (
           <button
