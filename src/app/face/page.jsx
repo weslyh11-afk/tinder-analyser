@@ -200,6 +200,9 @@ export default function FaceAnalysisPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const [glowUpUrl, setGlowUpUrl] = useState(null);
+  const [glowUpLoading, setGlowUpLoading] = useState(false);
+  const [glowUpError, setGlowUpError] = useState("");
 
   const handleFile = useCallback((file) => {
     if (!file) return;
@@ -255,12 +258,65 @@ export default function FaceAnalysisPage() {
     }
   };
 
+  const handleGlowUp = async () => {
+    if (!imageFile || glowUpLoading) return;
+    setGlowUpLoading(true);
+    setGlowUpError("");
+
+    try {
+      const resized = await resizeImage(imageFile);
+      const base64 = stripDataUri(resized);
+
+      // Build improvement hints from analysis results
+      const improvements = results?.improvement_areas
+        ?.map((item) => item.area)
+        .join(", ") || "";
+
+      // Start the glow-up generation
+      const startRes = await fetch("/api/face-glowup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, improvements }),
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok) throw new Error(startData.error || "Failed to start glow-up.");
+
+      const predictionId = startData.predictionId;
+
+      // Poll for result
+      let attempts = 0;
+      const maxAttempts = 60; // 2 minutes max
+      while (attempts < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const pollRes = await fetch(`/api/face-glowup?predictionId=${predictionId}`);
+        const pollData = await pollRes.json();
+
+        if (pollData.status === "succeeded" && pollData.url) {
+          setGlowUpUrl(pollData.url);
+          setGlowUpLoading(false);
+          return;
+        }
+        if (pollData.status === "failed") {
+          throw new Error(pollData.error || "Glow-up generation failed.");
+        }
+        attempts++;
+      }
+      throw new Error("Glow-up took too long. Please try again.");
+    } catch (err) {
+      setGlowUpError(err.message || "Something went wrong.");
+      setGlowUpLoading(false);
+    }
+  };
+
   const handleReset = () => {
     setPhase("input");
     setImageFile(null);
     setImagePreview(null);
     setResults(null);
     setErrorMsg("");
+    setGlowUpUrl(null);
+    setGlowUpLoading(false);
+    setGlowUpError("");
   };
 
   // ── Landing / Input ──────────────────────────────────────────────────────
@@ -683,6 +739,80 @@ export default function FaceAnalysisPage() {
               </p>
             </div>
           )}
+
+          {/* Glow-Up Section */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
+            <h3 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-3">
+              AI Glow-Up Preview
+            </h3>
+            <p className="text-xs text-zinc-400 mb-4">
+              See an AI-enhanced version of your face with improved lighting, skin clarity, and definition.
+              Your identity stays the same — only subtle enhancements are applied.
+            </p>
+
+            {!glowUpUrl && !glowUpLoading && (
+              <button
+                onClick={handleGlowUp}
+                className="w-full py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] transition-all"
+              >
+                Generate My Glow-Up
+              </button>
+            )}
+
+            {glowUpLoading && (
+              <div className="flex items-center justify-center gap-3 py-6">
+                <div className="w-6 h-6 rounded-full border-2 border-zinc-700 border-t-amber-500 animate-spin" />
+                <span className="text-sm text-zinc-400">Generating your glow-up... (30-60 seconds)</span>
+              </div>
+            )}
+
+            {glowUpError && (
+              <div className="mt-3">
+                <p className="text-xs text-red-400 mb-2">{glowUpError}</p>
+                <button
+                  onClick={handleGlowUp}
+                  className="text-xs text-amber-500 hover:text-amber-400 font-medium"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {glowUpUrl && (
+              <div className="mt-2">
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  {/* Before */}
+                  <div className="flex-1 text-center">
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">Before</p>
+                    {imagePreview && (
+                      <img
+                        src={imagePreview}
+                        alt="Before"
+                        className="w-full max-w-[240px] mx-auto rounded-xl border border-zinc-800"
+                      />
+                    )}
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="text-2xl text-amber-500 hidden sm:block">→</div>
+                  <div className="text-2xl text-amber-500 sm:hidden rotate-90">→</div>
+
+                  {/* After */}
+                  <div className="flex-1 text-center">
+                    <p className="text-[10px] text-green-400 uppercase tracking-wider mb-2">Glow-Up</p>
+                    <img
+                      src={glowUpUrl}
+                      alt="Glow-up preview"
+                      className="w-full max-w-[240px] mx-auto rounded-xl border border-green-500/30"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-600 text-center mt-3">
+                  AI-enhanced preview — actual results from skincare, grooming, and lifestyle changes will look different.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Reset button */}
           <button
