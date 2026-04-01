@@ -529,11 +529,16 @@ export default function FaceAnalysisPage() {
   if (phase === "results" && results) {
     const cats = results.categories || {};
     const categoryKeys = Object.keys(cats);
+    const sd = results.sexual_dimorphism;
+    const avg = results.facial_averageness;
+    const sym = results.facial_symmetry;
+    const fs = results.face_shape;
+    const smile = results.smile_analysis;
 
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white px-4 py-10">
         <div className="max-w-3xl mx-auto">
-          {/* Header: photo + overall score */}
+          {/* Header: photo + scores */}
           <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
             {imagePreview && (
               <img
@@ -551,6 +556,11 @@ export default function FaceAnalysisPage() {
                 {getScoreLabel(results.overall_score)} —{" "}
                 {results.overall_score.toFixed(1)} / 10
               </p>
+              {results.aesthetic_score != null && (
+                <p className="text-xs text-amber-500 mt-1">
+                  Aesthetic Potential: {results.aesthetic_score}/100
+                </p>
+              )}
             </div>
           </div>
 
@@ -575,11 +585,80 @@ export default function FaceAnalysisPage() {
             </div>
           )}
 
+          {/* QOVES-style overview cards: Dimorphism, Averageness, Symmetry, Face Shape */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            {/* Sexual Dimorphism */}
+            {sd && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                    {gender === "Female" ? "Femininity" : "Masculinity"}
+                  </h3>
+                  <span className={`text-lg font-bold ${getScoreColor(sd.score)}`}>{sd.score.toFixed(1)}</span>
+                </div>
+                <p className="text-xs text-amber-500 font-medium mb-1">{sd.range}</p>
+                <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">{sd.details}</p>
+                {sd.masculine_traits?.length > 0 && (
+                  <div className="mb-1">
+                    <span className="text-[10px] text-blue-400 font-medium uppercase">Masculine traits: </span>
+                    <span className="text-[11px] text-zinc-400">{sd.masculine_traits.join(", ")}</span>
+                  </div>
+                )}
+                {sd.feminine_traits?.length > 0 && (
+                  <div>
+                    <span className="text-[10px] text-pink-400 font-medium uppercase">Feminine traits: </span>
+                    <span className="text-[11px] text-zinc-400">{sd.feminine_traits.join(", ")}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Facial Symmetry */}
+            {sym && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Facial Symmetry</h3>
+                  <span className={`text-lg font-bold ${sym.score >= 80 ? "text-green-400" : sym.score >= 60 ? "text-amber-500" : "text-red-400"}`}>{sym.score}/100</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">{sym.details}</p>
+              </div>
+            )}
+
+            {/* Facial Averageness */}
+            {avg && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Facial Averageness</h3>
+                  <span className="text-lg font-bold text-amber-500">{avg.score}/100</span>
+                </div>
+                <p className="text-[10px] text-zinc-500 mb-1">0 = highly unique &bull; 100 = very average</p>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">{avg.details}</p>
+              </div>
+            )}
+
+            {/* Face Shape */}
+            {fs && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Face Shape</h3>
+                  <span className="text-lg font-bold text-amber-500">{fs.shape}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 mb-2 text-[11px]">
+                  <span className="text-zinc-500">Midface: <span className="text-zinc-300">{fs.midface_width}</span></span>
+                  <span className="text-zinc-500">Forehead: <span className="text-zinc-300">{fs.forehead_width}</span></span>
+                  <span className="text-zinc-500">Lower third: <span className="text-zinc-300">{fs.lower_third_width}</span></span>
+                  <span className="text-zinc-500">Length: <span className="text-zinc-300">{fs.facial_length}</span></span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">{fs.details}</p>
+              </div>
+            )}
+          </div>
+
           {/* Category Cards Grid */}
           <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
-            Detailed Breakdown
+            Feature-by-Feature Breakdown
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {categoryKeys.map((key) => (
               <CategoryCard
                 key={key}
@@ -593,6 +672,19 @@ export default function FaceAnalysisPage() {
               />
             ))}
           </div>
+
+          {/* Smile Analysis */}
+          {smile && smile.details && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
+              <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                Smile Analysis
+              </h3>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">{smile.details}</p>
+              {smile.how_to_improve && (
+                <p className="text-[11px] text-amber-400 mt-2 leading-relaxed">{smile.how_to_improve}</p>
+              )}
+            </div>
+          )}
 
           {/* Strengths */}
           {results.strengths && results.strengths.length > 0 && (
@@ -623,11 +715,11 @@ export default function FaceAnalysisPage() {
             </div>
           )}
 
-          {/* Improvement Areas (enhanced with current→target, priority, timeframe) */}
+          {/* Improvement Protocol */}
           {results.improvement_areas && results.improvement_areas.length > 0 && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
               <h3 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-4">
-                Your Glow-Up Plan
+                Your Glow-Up Protocol
               </h3>
               <ul className="space-y-5">
                 {results.improvement_areas.map((item, i) => (
@@ -647,14 +739,14 @@ export default function FaceAnalysisPage() {
                       )}
                     </div>
                     {item.current && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-red-400 font-medium uppercase">Now:</span>
+                      <div className="flex items-start gap-2 mt-1">
+                        <span className="text-[10px] text-red-400 font-medium uppercase shrink-0">Now:</span>
                         <span className="text-[11px] text-zinc-400">{item.current}</span>
                       </div>
                     )}
                     {item.target && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-green-400 font-medium uppercase">Goal:</span>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[10px] text-green-400 font-medium uppercase shrink-0">Goal:</span>
                         <span className="text-[11px] text-zinc-400">{item.target}</span>
                       </div>
                     )}
@@ -730,12 +822,24 @@ export default function FaceAnalysisPage() {
 
           {/* Social Perception */}
           {results.social_perception && (
-            <div className="bg-zinc-900 border-l-4 border-amber-500 rounded-r-xl p-5 mb-8">
+            <div className="bg-zinc-900 border-l-4 border-amber-500 rounded-r-xl p-5 mb-6">
               <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
                 Social Perception
               </h3>
               <p className="text-sm text-zinc-200 italic leading-relaxed">
                 &ldquo;{results.social_perception}&rdquo;
+              </p>
+            </div>
+          )}
+
+          {/* Closing Letter */}
+          {results.closing_letter && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
+              <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                Your Personal Report
+              </h3>
+              <p className="text-sm text-zinc-300 leading-relaxed italic">
+                {results.closing_letter}
               </p>
             </div>
           )}
